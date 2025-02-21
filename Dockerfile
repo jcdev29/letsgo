@@ -22,7 +22,7 @@ WORKDIR /root/
 RUN apk --no-cache add ca-certificates
 
 # Copy compiled binary from the build stage
-COPY --from=build /app/main .
+COPY --from=build /app/main /root/main
 
 # Ensure the binary is executable
 RUN chmod +x /root/main
