@@ -1,31 +1,18 @@
-# Use the official Golang image
+# Use the official Go image for building
 FROM golang:1.23 AS build
 
-# Set environment variables
-ENV CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
-
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy everything from the project directory to the container
+# Copy everything into the container
 COPY . .
 
-# Download dependencies and build the application
+# Ensure Go modules are set up correctly
 RUN go mod tidy && go build -o main .
 
-# Use a lightweight image to run the application
-FROM alpine:latest  
-
-# Set the working directory inside the new container
+# Use a lightweight image to run the app
+FROM alpine:latest
 WORKDIR /root/
-
-# Copy the built binary from the previous stage
 COPY --from=build /app/main .
 
-# Expose port 8080
 EXPOSE 8080
-
-# Command to run the app
 CMD ["./main"]
