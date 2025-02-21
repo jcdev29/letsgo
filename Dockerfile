@@ -1,4 +1,4 @@
-# Use the official Go image for building
+# Use the official Go image to build the app
 FROM golang:1.23 AS build
 
 WORKDIR /app
@@ -6,23 +6,25 @@ WORKDIR /app
 # Copy everything into the container
 COPY . .
 
-# Ensure Go modules are set up correctly
+# Download dependencies and build the application
 RUN go mod tidy && go build -o main .
 
-# Use a lightweight image to run the app
+# Use a lightweight Alpine image to run the app
 FROM alpine:latest
 
 WORKDIR /root/
 
-# Install necessary dependencies
+# Install required certificates
 RUN apk --no-cache add ca-certificates
 
-# Copy the built binary from the build stage
+# Copy the compiled binary from the build stage
 COPY --from=build /app/main .
 
-# Expose the API port
+# Ensure the binary has execute permissions
+RUN chmod +x main
+
+# Expose API port
 EXPOSE 8080
 
-# Start the application
+# Run the API server
 CMD ["./main"]
-
