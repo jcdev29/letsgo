@@ -1,5 +1,5 @@
 # Use the official Golang image
-FROM golang:1.21 AS build
+FROM golang:1.23 AS build
 
 # Set environment variables
 ENV CGO_ENABLED=0 \
