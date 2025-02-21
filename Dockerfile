@@ -1,30 +1,26 @@
 # Build Stage
-FROM golang:1.23 AS build
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
-# Copy go.mod and go.sum to download dependencies
+# Install build dependencies
+RUN apk add --no-cache gcc musl-dev
+# Copy go.mod and go.sum first
 COPY go.mod go.sum ./
 RUN go mod download
 # Copy the rest of the source code
 COPY . .
-# Build the Go application with static linking
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
-# Deployment Stage
+# Final Stage
 FROM alpine:latest
-WORKDIR /app  # Changed from /root for better security practices
-# Install necessary runtime dependencies
+WORKDIR /app
+# Install runtime dependencies
 RUN apk --no-cache add ca-certificates
-# Create a non-root user
-RUN adduser -D appuser
-# Copy compiled binary from the build stage
-COPY --from=build /app/main .
-# Ensure the binary is executable and owned by appuser
-RUN chown appuser:appuser main && chmod +x main
-# Switch to non-root user
-USER appuser
-# Expose API port
+# Copy the binary from builder
+COPY --from=builder /app/main .
+# Make binary executable
+RUN chmod +x main
+# Expose port
 EXPOSE 8080
-# Set environment variables
-ENV GIN_MODE=release
-# Start the API
+# Run the binary
 CMD ["./main"]
