@@ -1,30 +1,34 @@
-# Build stage
+# Build Stage
 FROM golang:1.23.6 AS build
 
 WORKDIR /app
 
-# Copy source code
+# Copy Go modules and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the remaining source code
 COPY . .
 
-# Download dependencies and build the application with static linking
-RUN go mod tidy && go build -o main -tags 'osusergo netgo' -ldflags '-extldflags "-static"'
+# Build the Go application
+RUN go build -o /main
 
-# Runtime stage (Alpine-based)
+# Deployment Stage (lightweight image)
 FROM alpine:latest
 
 WORKDIR /root/
 
-# Install required certificates and libc compatibility
-RUN apk --no-cache add ca-certificates libc6-compat
+# Install necessary runtime dependencies
+RUN apk --no-cache add ca-certificates
 
-# Copy the compiled binary from the build stage
-COPY --from=build /app/main .
+# Copy compiled binary from build stage
+COPY --from=build /main .
 
 # Ensure the binary is executable
-RUN chmod +x main
+RUN chmod +x /main
 
-# Expose the API port
+# Expose API port
 EXPOSE 8080
 
-# Run the API server
-CMD ["./main"]
+# Start the API
+CMD ["/main"]
